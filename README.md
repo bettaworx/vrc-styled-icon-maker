@@ -1,6 +1,8 @@
 # VRCStyledIconMaker
 Create an icon to be used in the VRChat Expression Menu
 
+![alt text](https://raw.githubusercontent.com/nekochanfood/VRCStyledIconMaker/refs/heads/main/Thumbnail_1920x1080.png "Preview")
+
 ### Acknowledgment
 This product includes an icon based on Phosphor Icons (Copyright (c) 2020 Phosphor Icons), distributed under the MIT License.
 
