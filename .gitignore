@@ -1,0 +1,4 @@
+# Folders to ignore
+.Tools/input_images_*/
+.Tools/output_images_*/
+.Tools/.assets/phosphor-icons/
