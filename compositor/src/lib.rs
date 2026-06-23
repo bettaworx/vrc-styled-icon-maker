@@ -115,6 +115,23 @@ fn parse_svg_input(svg: &str) -> Result<SvgInfo, CompositorError> {
     })
 }
 
+fn compute_shape_bounds(svg_input: &str, info: &SvgInfo) -> (f64, f64, f64, f64) {
+    let tree = resvg::usvg::Tree::from_str(svg_input, &resvg::usvg::Options::default());
+    if let Ok(tree) = tree {
+        let bbox = tree.root().stroke_bounding_box();
+        let (l, t, r, b) = (
+            bbox.left() as f64,
+            bbox.top() as f64,
+            bbox.right() as f64,
+            bbox.bottom() as f64,
+        );
+        if r > l && b > t {
+            return (l, t, r, b);
+        }
+    }
+    (info.min_x, info.min_y, info.min_x + info.width, info.min_y + info.height)
+}
+
 pub fn compose(svg_input: &str, config: &CompositorConfig) -> Result<String, CompositorError> {
     let info = parse_svg_input(svg_input)?;
 
@@ -133,8 +150,9 @@ pub fn compose(svg_input: &str, config: &CompositorConfig) -> Result<String, Com
     let fw = config.canvas_size + margin * 2;
     let fh = config.canvas_size + margin * 2;
 
-    let icon_top = (cs - scaled_h) / 2.0;
-    let icon_bottom = (cs + scaled_h) / 2.0;
+    let (_, bbox_top, _, bbox_bottom) = compute_shape_bounds(svg_input, &info);
+    let grad_top = bbox_top * scale + ty;
+    let grad_bottom = bbox_bottom * scale + ty;
     let canvas_mid = cs / 2.0;
 
     Ok(format!(
@@ -165,8 +183,8 @@ pub fn compose(svg_input: &str, config: &CompositorConfig) -> Result<String, Com
         gs = config.gradient_start_color,
         ge = config.gradient_end_color,
         cmx = canvas_mid,
-        it = icon_top,
-        ib = icon_bottom,
+        it = grad_top,
+        ib = grad_bottom,
         fx = fx,
         fy = fy,
         fw = fw,
