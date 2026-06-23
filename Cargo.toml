@@ -1,10 +1,10 @@
 [workspace]
 members = [
-    "converter",
-    "compositor",
-    "normalizer",
-    "renderer",
-    "app",
+    "crates/converter",
+    "crates/compositor",
+    "crates/normalizer",
+    "crates/renderer",
+    "crates/app",
 ]
 resolver = "2"
 
