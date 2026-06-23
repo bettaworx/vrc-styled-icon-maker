@@ -1,0 +1,8 @@
+[package]
+name = "normalizer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+roxmltree = "0.21"
+thiserror = { workspace = true }
