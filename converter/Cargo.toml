@@ -1,0 +1,12 @@
+[package]
+name = "converter"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+vtracer = { workspace = true }
+image = { workspace = true }
+thiserror = { workspace = true }
+wasm-bindgen = { workspace = true }
+serde = { workspace = true }
+serde-keyvalue = { workspace = true }
