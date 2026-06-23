@@ -1,0 +1,15 @@
+[package]
+name = "vrc-icon-maker-wasm"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+normalizer = { path = "../normalizer" }
+compositor = { path = "../compositor" }
+renderer = { path = "../renderer" }
+wasm-bindgen = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
+serde = { workspace = true }

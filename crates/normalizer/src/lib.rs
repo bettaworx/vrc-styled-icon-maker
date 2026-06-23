@@ -1,7 +1,9 @@
+use serde::Deserialize;
 use std::fmt::Write as _;
 use thiserror::Error;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
 pub struct NormalizerConfig {
     pub fill_color: String,
     pub remove_background: bool,

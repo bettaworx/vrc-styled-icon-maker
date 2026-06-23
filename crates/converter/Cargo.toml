@@ -7,6 +7,5 @@ edition = "2024"
 vtracer = { workspace = true }
 image = { workspace = true }
 thiserror = { workspace = true }
-wasm-bindgen = { workspace = true }
 serde = { workspace = true }
 serde-keyvalue = { workspace = true }

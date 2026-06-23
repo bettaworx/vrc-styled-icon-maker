@@ -114,10 +114,15 @@ fn encode_png_fast(pixmap: &tiny_skia::Pixmap) -> Result<Vec<u8>, RenderError> {
 pub fn render_svg(svg_data: &str, options: &RenderOptions) -> Result<Vec<u8>, RenderError> {
     let mut usvg_options = usvg::Options::default();
 
-    let mut fontdb = usvg::fontdb::Database::new();
-    if svg_data.contains("<text") || svg_data.contains("<tspan") {
-        fontdb.load_system_fonts();
-    }
+    let fontdb = {
+        #[allow(unused_mut)]
+        let mut db = usvg::fontdb::Database::new();
+        #[cfg(not(target_arch = "wasm32"))]
+        if svg_data.contains("<text") || svg_data.contains("<tspan") {
+            db.load_system_fonts();
+        }
+        db
+    };
     usvg_options.fontdb = std::sync::Arc::new(fontdb);
 
     let tree = usvg::Tree::from_str(svg_data, &usvg_options)

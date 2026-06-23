@@ -3,8 +3,21 @@ use serde::de;
 use thiserror::Error;
 
 fn deserialize_f32<'de, D: de::Deserializer<'de>>(deserializer: D) -> Result<f32, D::Error> {
-    let s = String::deserialize(deserializer)?;
-    s.parse::<f32>().map_err(de::Error::custom)
+    struct F32Visitor;
+    impl<'de> de::Visitor<'de> for F32Visitor {
+        type Value = f32;
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            f.write_str("a float or a string containing a float")
+        }
+        fn visit_f32<E: de::Error>(self, v: f32) -> Result<f32, E> { Ok(v) }
+        fn visit_f64<E: de::Error>(self, v: f64) -> Result<f32, E> { Ok(v as f32) }
+        fn visit_i64<E: de::Error>(self, v: i64) -> Result<f32, E> { Ok(v as f32) }
+        fn visit_u64<E: de::Error>(self, v: u64) -> Result<f32, E> { Ok(v as f32) }
+        fn visit_str<E: de::Error>(self, s: &str) -> Result<f32, E> {
+            s.parse::<f32>().map_err(de::Error::custom)
+        }
+    }
+    deserializer.deserialize_any(F32Visitor)
 }
 
 #[derive(Debug, Clone, Deserialize)]

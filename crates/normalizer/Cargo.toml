@@ -5,4 +5,5 @@ edition = "2024"
 
 [dependencies]
 roxmltree = "0.21"
+serde = { workspace = true }
 thiserror = { workspace = true }

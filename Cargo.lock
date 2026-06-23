@@ -152,7 +152,6 @@ dependencies = [
  "serde",
  "serde-keyvalue",
  "thiserror 2.0.18",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -177,7 +176,6 @@ dependencies = [
  "serde-keyvalue",
  "thiserror 2.0.18",
  "vtracer",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -573,6 +571,7 @@ name = "normalizer"
 version = "0.1.0"
 dependencies = [
  "roxmltree 0.21.1",
+ "serde",
  "thiserror 2.0.18",
 ]
 
@@ -850,6 +849,17 @@ dependencies = [
  "remain",
  "serde",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "serde-wasm-bindgen"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8302e169f0eddcc139c70f139d19d6467353af16f9fce27e8c30158036a1e16b"
+dependencies = [
+ "js-sys",
+ "serde",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -1163,6 +1173,18 @@ dependencies = [
  "bit-vec",
  "flo_curves",
  "num-traits",
+]
+
+[[package]]
+name = "vrc-icon-maker-wasm"
+version = "0.1.0"
+dependencies = [
+ "compositor",
+ "normalizer",
+ "renderer",
+ "serde",
+ "serde-wasm-bindgen",
+ "wasm-bindgen",
 ]
 
 [[package]]
