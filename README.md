@@ -14,15 +14,18 @@ Access the hosted version at [vsim.bettaworx.net](https://vsim.bettaworx.net) â€
 
 To run locally:
 
-**Prerequisites:** [Node.js](https://nodejs.org/), [pnpm](https://pnpm.io/), [Rust](https://www.rust-lang.org/tools/install), [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)
-
 ```sh
-# Build the WASM package
-wasm-pack build --target web --scope bettaworx crates/wasm
-
-# Start the dev server
 cd web
 pnpm install
+pnpm dev
+```
+
+To develop with local WASM changes (requires [Rust](https://www.rust-lang.org/tools/install) and [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)):
+
+```sh
+wasm-pack build --target web --scope bettaworx crates/wasm
+cd web
+pnpm link ../crates/wasm/pkg
 pnpm dev
 ```
 
