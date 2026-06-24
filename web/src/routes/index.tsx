@@ -29,8 +29,9 @@ const SVG_IDS = ["vrc-icon-grad", "vrc-shadow-filter", "vrc-icon-mask"];
 function uniquifySvgIds(svg: string, suffix: string): string {
   let result = svg;
   for (const id of SVG_IDS) {
-    result = result.replaceAll(`"${id}"`, `"${id}-${suffix}"`);
-    result = result.replaceAll(`(#${id})`, `(#${id}-${suffix})`);
+    // replaceAll may not be available depending on TS lib target; use split/join for compatibility
+    result = result.split(`"${id}"`).join(`"${id}-${suffix}"`);
+    result = result.split(`(#${id})`).join(`(#${id}-${suffix})`);
   }
   return result;
 }

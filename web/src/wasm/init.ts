@@ -4,7 +4,7 @@ import wasmInit, {
   compose,
   render_svg,
   process_svg,
-} from "vrc-styled-icon-maker-wasm";
+} from "@bettaworx/vrc-styled-icon-maker-wasm";
 
 let initPromise: Promise<unknown> | null = null;
 
