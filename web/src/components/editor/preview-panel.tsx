@@ -40,7 +40,7 @@ export function PreviewPanel({ entries, onRemove, onDownload, loading, error }: 
     return (
       <div className="flex h-full items-center justify-center bg-secondary p-8">
         <div
-          className="aspect-square w-full max-w-md rounded-lg bg-[repeating-conic-gradient(oklch(0.9_0_0)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px] shadow-sm"
+          className="aspect-square w-full max-w-md rounded-lg bg-[repeating-conic-gradient(var(--color-checker)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px] shadow-sm"
           dangerouslySetInnerHTML={{ __html: entry.previewSvg ?? "" }}
         />
       </div>
@@ -57,18 +57,18 @@ export function PreviewPanel({ entries, onRemove, onDownload, loading, error }: 
           >
             <button
               onClick={() => onDownload(entry.id)}
-              className="absolute top-2 left-2 z-10 hidden rounded-full bg-background/80 p-1 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-background hover:text-foreground group-hover/card:block"
+              className="absolute top-2 left-2 z-10 rounded-full bg-background/80 p-1 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-background hover:text-foreground md:hidden md:group-hover/card:block"
             >
               <DownloadSimple size={12} />
             </button>
             <button
               onClick={() => onRemove(entry.id)}
-              className="absolute top-2 right-2 z-10 hidden rounded-full bg-background/80 p-1 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-background hover:text-foreground group-hover/card:block"
+              className="absolute top-2 right-2 z-10 rounded-full bg-background/80 p-1 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-background hover:text-foreground md:hidden md:group-hover/card:block"
             >
               <X size={12} />
             </button>
             <div
-              className="aspect-square w-full rounded bg-[repeating-conic-gradient(oklch(0.9_0_0)_0%_25%,transparent_0%_50%)] bg-[length:8px_8px]"
+              className="aspect-square w-full rounded bg-[repeating-conic-gradient(var(--color-checker)_0%_25%,transparent_0%_50%)] bg-[length:8px_8px]"
               dangerouslySetInnerHTML={{ __html: entry.previewSvg ?? "" }}
             />
             <p className="mt-1 truncate text-center text-xs text-muted-foreground">

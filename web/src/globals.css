@@ -3,7 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@theme inline {
+@theme {
   --color-background: oklch(1 0 0);
   --color-foreground: oklch(0.148 0.004 228.8);
   --color-card: oklch(1 0 0);
@@ -27,6 +27,7 @@
   --color-chart-3: oklch(0.45 0.017 213.2);
   --color-chart-4: oklch(0.378 0.015 216);
   --color-chart-5: oklch(0.275 0.011 216.9);
+  --color-checker: oklch(0.9 0 0);
   --radius: 0.625rem;
   --color-sidebar: oklch(0.987 0.002 197.1);
   --color-sidebar-foreground: oklch(0.148 0.004 228.8);
@@ -65,6 +66,7 @@
   --color-chart-3: oklch(0.45 0.017 213.2);
   --color-chart-4: oklch(0.378 0.015 216);
   --color-chart-5: oklch(0.275 0.011 216.9);
+  --color-checker: oklch(0.3 0 0);
   --color-sidebar: oklch(0.218 0.008 223.9);
   --color-sidebar-foreground: oklch(0.987 0.002 197.1);
   --color-sidebar-primary: oklch(0.488 0.243 264.376);
