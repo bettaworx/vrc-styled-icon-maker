@@ -3,3 +3,5 @@ allowBuilds:
   esbuild: true
 minimumReleaseAgeExclude:
   - '@bettaworx/vrc-styled-icon-maker-wasm@0.1.0'
+overrides:
+  '@bettaworx/vrc-styled-icon-maker-wasm': link:../crates/wasm/pkg

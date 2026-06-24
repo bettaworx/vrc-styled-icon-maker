@@ -71,14 +71,14 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cd target/${{ matrix.target }}/release
-          tar czf ../../../vrc-styled-icon-maker-${{ matrix.target }}.tar.gz vrc-styled-icon-maker
+          tar czf ../../../vrc-styled-icon-maker-${{ matrix.target }}.tar.gz vsim
           cd ../../..
 
       - name: Archive (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          Compress-Archive -Path target/${{ matrix.target }}/release/vrc-styled-icon-maker.exe -DestinationPath vrc-styled-icon-maker-${{ matrix.target }}.zip
+          Compress-Archive -Path target/${{ matrix.target }}/release/vsim.exe -DestinationPath vrc-styled-icon-maker-${{ matrix.target }}.zip
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
