@@ -43,8 +43,8 @@ importers:
         version: 1.4.0
     devDependencies:
       '@bettaworx/vrc-styled-icon-maker-wasm':
-        specifier: file:../crates/wasm/pkg
-        version: vrc-styled-icon-maker-wasm@file:../crates/wasm/pkg
+        specifier: 0.1.0
+        version: 0.1.0
       '@tailwindcss/vite':
         specifier: ^4.0.0
         version: 4.3.1(vite@6.4.3(jiti@2.7.0)(lightningcss@1.32.0))
@@ -154,6 +154,9 @@ packages:
   '@babel/types@7.29.7':
     resolution: {integrity: sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA==}
     engines: {node: '>=6.9.0'}
+
+  '@bettaworx/vrc-styled-icon-maker-wasm@0.1.0':
+    resolution: {integrity: sha512-OJ2yqCwlh2iuZiEFINtFKD7qp74M7YPNXnYfZNkNsWW8UWkL81f85WLv6fksltXPwVtMHdhANfo5h4+ByV7tWA==}
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}
@@ -1790,9 +1793,6 @@ packages:
       yaml:
         optional: true
 
-  vrc-styled-icon-maker-wasm@file:../crates/wasm/pkg:
-    resolution: {directory: ../crates/wasm/pkg, type: directory}
-
   webpack-virtual-modules@0.6.2:
     resolution: {integrity: sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ==}
 
@@ -1915,6 +1915,8 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
+
+  '@bettaworx/vrc-styled-icon-maker-wasm@0.1.0': {}
 
   '@esbuild/aix-ppc64@0.25.12':
     optional: true
@@ -3438,8 +3440,6 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.7.0
       lightningcss: 1.32.0
-
-  vrc-styled-icon-maker-wasm@file:../crates/wasm/pkg: {}
 
   webpack-virtual-modules@0.6.2: {}
 
