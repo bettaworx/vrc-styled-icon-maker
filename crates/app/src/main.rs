@@ -9,7 +9,7 @@ use std::path::Path;
 use std::process;
 
 struct Args {
-    input: String,
+    inputs: Vec<String>,
     output: String,
     renderer_params: Option<String>,
     convert: Option<Option<String>>,
@@ -19,7 +19,7 @@ struct Args {
 fn parse_args() -> Args {
     let args: Vec<String> = env::args().skip(1).collect();
 
-    let mut input = None;
+    let mut inputs = Vec::new();
     let mut output = None;
     let mut renderer_params = None;
     let mut convert: Option<Option<String>> = None;
@@ -30,7 +30,9 @@ fn parse_args() -> Args {
         match args[i].as_str() {
             "-i" => {
                 i += 1;
-                input = args.get(i).cloned();
+                if let Some(v) = args.get(i) {
+                    inputs.push(v.clone());
+                }
             }
             "-o" => {
                 i += 1;
@@ -65,27 +67,30 @@ fn parse_args() -> Args {
                 }
             }
             _ => {
-                if input.is_none() {
-                    input = Some(args[i].clone());
-                } else if output.is_none() {
-                    output = Some(args[i].clone());
+                if output.is_some() || !inputs.is_empty() {
+                    if output.is_none() {
+                        output = Some(args[i].clone());
+                    }
+                } else {
+                    inputs.push(args[i].clone());
                 }
             }
         }
         i += 1;
     }
 
-    let Some(input) = input else {
-        eprintln!("Usage: app -i <input> -o <output.png> [-r [params]] [-c [params]] [-s [params]]");
-        eprintln!("       app <input> <output.png>");
+    if inputs.is_empty() {
+        eprintln!("Usage: app -i <input> -o <output> [-r [params]] [-c [params]] [-s [params]]");
+        eprintln!("       app <input> <output>");
+        eprintln!("       app -i <glob_pattern> -o <output_dir>");
         eprintln!();
-        eprintln!("  -i  Input file (SVG or PNG)");
-        eprintln!("  -o  Output image file");
+        eprintln!("  -i  Input file, glob pattern, or directory (can specify multiple)");
+        eprintln!("  -o  Output file or directory");
         eprintln!("  -r  Renderer params");
         eprintln!("  -c  Vectorize params (PNG is always vectorized; use -c to customize)");
         eprintln!("  -s  Style with VRC icon template & params");
         process::exit(1);
-    };
+    }
 
     let Some(output) = output else {
         eprintln!("Error: output path is required (-o <path> or second positional arg)");
@@ -93,12 +98,38 @@ fn parse_args() -> Args {
     };
 
     Args {
-        input,
+        inputs,
         output,
         renderer_params,
         convert,
         style,
     }
+}
+
+fn expand_inputs(raw: &[String]) -> Vec<String> {
+    let mut result = Vec::new();
+    for pattern in raw {
+        let path = Path::new(pattern);
+        if path.is_dir() {
+            for ext in &["*.svg", "*.png", "*.SVG", "*.PNG"] {
+                let glob_pattern = format!("{}/{ext}", pattern.trim_end_matches(['/', '\\']));
+                if let Ok(paths) = glob::glob(&glob_pattern) {
+                    for entry in paths.flatten() {
+                        result.push(entry.display().to_string());
+                    }
+                }
+            }
+        } else if pattern.contains('*') || pattern.contains('?') {
+            if let Ok(paths) = glob::glob(pattern) {
+                for entry in paths.flatten() {
+                    result.push(entry.display().to_string());
+                }
+            }
+        } else {
+            result.push(pattern.clone());
+        }
+    }
+    result
 }
 
 fn spinner(msg: &str) -> ProgressBar {
@@ -122,11 +153,13 @@ fn finish(pb: &ProgressBar, msg: &str) {
     pb.finish_with_message(msg.to_string());
 }
 
-fn main() {
-    let args = parse_args();
-
-    let input_path = Path::new(&args.input);
-    let ext = input_path
+fn process_file(
+    input_path: &str,
+    output_path: &str,
+    args: &Args,
+) {
+    let path = Path::new(input_path);
+    let ext = path
         .extension()
         .and_then(|e| e.to_str())
         .unwrap_or("")
@@ -134,66 +167,51 @@ fn main() {
 
     let svg_data = match ext.as_str() {
         "png" => {
-            let sp = spinner("Reading PNG...");
-            let png_data = fs::read(&args.input).unwrap_or_else(|e| {
+            let sp = spinner(&format!("Reading {input_path}..."));
+            let png_data = fs::read(input_path).unwrap_or_else(|e| {
                 sp.abandon();
-                eprintln!("Failed to read {}: {e}", args.input);
+                eprintln!("Failed to read {input_path}: {e}");
                 process::exit(1);
             });
-            finish(&sp, "Read PNG");
+            finish(&sp, &format!("Read {input_path}"));
 
-            match &args.convert {
-                Some(params) => {
-                    let config = match params {
-                        Some(s) => VtracerConfig::from_params_str(s).unwrap_or_else(|e| {
-                            eprintln!("Invalid -c params: {e}");
-                            process::exit(1);
-                        }),
-                        None => VtracerConfig::default(),
-                    };
-                    let sp = spinner("Vectorizing...");
-                    let result = vectorize(&png_data, &config).unwrap_or_else(|e| {
-                        sp.abandon();
-                        eprintln!("Vectorize failed: {e}");
-                        process::exit(1);
-                    });
-                    finish(&sp, "Vectorized");
-                    result
-                }
-                None => {
-                    let config = VtracerConfig::default();
-                    let sp = spinner("Vectorizing...");
-                    let result = vectorize(&png_data, &config).unwrap_or_else(|e| {
-                        sp.abandon();
-                        eprintln!("Vectorize failed: {e}");
-                        process::exit(1);
-                    });
-                    finish(&sp, "Vectorized");
-                    result
-                }
-            }
+            let config = match &args.convert {
+                Some(Some(s)) => VtracerConfig::from_params_str(s).unwrap_or_else(|e| {
+                    eprintln!("Invalid -c params: {e}");
+                    process::exit(1);
+                }),
+                _ => VtracerConfig::default(),
+            };
+            let sp = spinner("Vectorizing...");
+            let result = vectorize(&png_data, &config).unwrap_or_else(|e| {
+                sp.abandon();
+                eprintln!("Vectorize failed: {e}");
+                process::exit(1);
+            });
+            finish(&sp, "Vectorized");
+            result
         }
         _ => {
-            let sp = spinner("Reading SVG...");
-            let result = fs::read_to_string(&args.input).unwrap_or_else(|e| {
+            let sp = spinner(&format!("Reading {input_path}..."));
+            let result = fs::read_to_string(input_path).unwrap_or_else(|e| {
                 sp.abandon();
-                eprintln!("Failed to read {}: {e}", args.input);
+                eprintln!("Failed to read {input_path}: {e}");
                 process::exit(1);
             });
-            finish(&sp, "Read SVG");
+            finish(&sp, &format!("Read {input_path}"));
             result
         }
     };
 
     let svg_data = if args.style.is_some() {
-        let sp = spinner("Normalizing SVG...");
+        let sp = spinner("Normalizing...");
         let result =
             normalize(&svg_data, &NormalizerConfig::default()).unwrap_or_else(|e| {
                 sp.abandon();
                 eprintln!("Normalize failed: {e}");
                 process::exit(1);
             });
-        finish(&sp, "Normalized SVG");
+        finish(&sp, "Normalized");
         result
     } else {
         svg_data
@@ -214,14 +232,13 @@ fn main() {
                 eprintln!("Compose failed: {e}");
                 process::exit(1);
             });
-            finish(&sp, "Composed style");
+            finish(&sp, "Composed");
             result
         }
         None => svg_data,
     };
 
-    let output_path = Path::new(&args.output);
-    let output_ext = output_path
+    let output_ext = Path::new(output_path)
         .extension()
         .and_then(|e| e.to_str())
         .unwrap_or("")
@@ -229,12 +246,12 @@ fn main() {
 
     if output_ext == "svg" {
         let sp = spinner("Writing SVG...");
-        fs::write(&args.output, &svg_data).unwrap_or_else(|e| {
+        fs::write(output_path, &svg_data).unwrap_or_else(|e| {
             sp.abandon();
-            eprintln!("Failed to write {}: {e}", args.output);
+            eprintln!("Failed to write {output_path}: {e}");
             process::exit(1);
         });
-        finish(&sp, &format!("Saved {} -> {}", args.input, args.output));
+        finish(&sp, &format!("Saved {input_path} -> {output_path}"));
     } else {
         let options = match &args.renderer_params {
             Some(s) => RenderOptions::from_params_str(s).unwrap_or_else(|e| {
@@ -248,16 +265,16 @@ fn main() {
         match render_svg(&svg_data, &options) {
             Ok(png_bytes) => {
                 sp.set_message("Writing PNG...".to_string());
-                fs::write(&args.output, &png_bytes).unwrap_or_else(|e| {
+                fs::write(output_path, &png_bytes).unwrap_or_else(|e| {
                     sp.abandon();
-                    eprintln!("Failed to write {}: {e}", args.output);
+                    eprintln!("Failed to write {output_path}: {e}");
                     process::exit(1);
                 });
                 let w = options.width.map_or("auto".to_string(), |v| v.to_string());
                 let h = options.height.map_or("auto".to_string(), |v| v.to_string());
                 finish(
                     &sp,
-                    &format!("Rendered {} -> {} ({w}x{h})", args.input, args.output),
+                    &format!("Rendered {input_path} -> {output_path} ({w}x{h})"),
                 );
             }
             Err(e) => {
@@ -266,5 +283,46 @@ fn main() {
                 process::exit(1);
             }
         }
+    }
+}
+
+fn main() {
+    let args = parse_args();
+    let inputs = expand_inputs(&args.inputs);
+
+    if inputs.is_empty() {
+        eprintln!("No input files matched");
+        process::exit(1);
+    }
+
+    let output_is_dir = Path::new(&args.output).is_dir()
+        || (inputs.len() > 1 && !args.output.contains('.'));
+
+    if inputs.len() > 1 && output_is_dir {
+        let out_dir = Path::new(&args.output);
+        if !out_dir.exists() {
+            fs::create_dir_all(out_dir).unwrap_or_else(|e| {
+                eprintln!("Failed to create output directory {}: {e}", args.output);
+                process::exit(1);
+            });
+        }
+    }
+
+    if inputs.len() > 1 {
+        eprintln!("Processing {} files...", inputs.len());
+    }
+
+    for input in &inputs {
+        let output_path = if output_is_dir {
+            let stem = Path::new(input)
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("output");
+            format!("{}/{stem}.png", args.output.trim_end_matches(['/', '\\']))
+        } else {
+            args.output.clone()
+        };
+
+        process_file(input, &output_path, &args);
     }
 }

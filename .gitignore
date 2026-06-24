@@ -5,3 +5,12 @@ target
 **/mutants.out*/
 rustc-ice-*.txt
 .idea/
+
+# WASM build output
+crates/wasm/pkg/
+
+# Web app
+web/node_modules/
+web/dist/
+web/.vite/
+.tanstack/

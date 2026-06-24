@@ -3,9 +3,14 @@ name = "app"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "vrc-styled-icon-maker"
+path = "src/main.rs"
+
 [dependencies]
 compositor = { path = "../compositor" }
 normalizer = { path = "../normalizer" }
 renderer = { path = "../renderer" }
 converter = { path = "../converter" }
 indicatif = "0.17"
+glob = "0.3"

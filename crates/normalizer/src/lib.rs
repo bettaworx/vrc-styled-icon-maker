@@ -37,6 +37,28 @@ const RENDERABLE_ELEMENTS: &[&str] = &[
     "path", "rect", "circle", "ellipse", "line", "polyline", "polygon", "text", "use", "image",
 ];
 
+const INHERITABLE_PRESENTATION_ATTRS: &[&str] = &[
+    "stroke-width",
+    "stroke-linecap",
+    "stroke-linejoin",
+    "stroke-dasharray",
+    "stroke-dashoffset",
+    "stroke-miterlimit",
+    "stroke-opacity",
+    "fill-opacity",
+    "fill-rule",
+    "clip-rule",
+    "color",
+    "opacity",
+    "font-family",
+    "font-size",
+    "font-style",
+    "font-weight",
+    "text-anchor",
+    "letter-spacing",
+    "word-spacing",
+];
+
 const NON_INHERIT_CONTAINERS: &[&str] = &[
     "defs",
     "clipPath",
@@ -221,6 +243,19 @@ fn serialize_node(
                 )
                 .unwrap();
 
+                let mut pres_attrs = String::new();
+                for attr in node.attributes() {
+                    if INHERITABLE_PRESENTATION_ATTRS.contains(&attr.name()) {
+                        write!(pres_attrs, r#" {}="{}""#, attr.name(), attr.value()).unwrap();
+                    }
+                }
+                let has_pres_attrs = !pres_attrs.is_empty();
+                if has_pres_attrs {
+                    out.push_str("<g");
+                    out.push_str(&pres_attrs);
+                    out.push('>');
+                }
+
                 for child in node.children() {
                     if config.remove_background && !in_defs && is_background_rect(&child, vb) {
                         continue;
@@ -228,6 +263,9 @@ fn serialize_node(
                     serialize_node(&child, &child_inherited, config, vb, false, in_defs, out);
                 }
 
+                if has_pres_attrs {
+                    out.push_str("</g>");
+                }
                 out.push_str("</svg>");
                 return;
             }
@@ -523,6 +561,22 @@ mod tests {
         assert!(result.contains(r#"viewBox="0 -960 960 960""#));
         assert!(result.contains(r##"fill="#ffffff""##));
         assert!(!result.contains(r##"fill="#1f1f1f""##));
+    }
+
+    #[test]
+    fn root_stroke_presentation_attrs_preserved() {
+        let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v2"/><rect x="4" y="4" width="16" height="16" rx="2"/></svg>"#;
+        let result = normalize(svg, &NormalizerConfig::default()).unwrap();
+        assert!(result.contains(r#"stroke-width="2""#), "stroke-width lost: {result}");
+        assert!(result.contains(r#"stroke-linecap="round""#), "stroke-linecap lost: {result}");
+        assert!(result.contains(r#"stroke-linejoin="round""#), "stroke-linejoin lost: {result}");
+    }
+
+    #[test]
+    fn no_wrapper_g_when_no_presentation_attrs() {
+        let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="red" d="M0 0"/></svg>"#;
+        let result = normalize(svg, &NormalizerConfig::default()).unwrap();
+        assert!(!result.contains("<g"), "unexpected <g> wrapper: {result}");
     }
 
     #[test]

@@ -13,8 +13,10 @@ pub enum ImageFormat {
 fn deserialize_background<'de, D: de::Deserializer<'de>>(
     deserializer: D,
 ) -> Result<Option<[u8; 4]>, D::Error> {
-    let s = String::deserialize(deserializer)?;
-    parse_hex_color(&s).map(Some).map_err(de::Error::custom)
+    match Option::<String>::deserialize(deserializer)? {
+        None => Ok(None),
+        Some(s) => parse_hex_color(&s).map(Some).map_err(de::Error::custom),
+    }
 }
 
 fn parse_hex_color(s: &str) -> Result<[u8; 4], String> {
@@ -50,8 +52,8 @@ pub struct RenderOptions {
 impl Default for RenderOptions {
     fn default() -> Self {
         Self {
-            width: None,
-            height: None,
+            width: Some(256),
+            height: Some(256),
             format: ImageFormat::Png,
             background: None,
         }

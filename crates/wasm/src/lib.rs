@@ -9,6 +9,12 @@ fn parse_config<T: serde::de::DeserializeOwned + Default>(val: JsValue) -> Resul
 }
 
 #[wasm_bindgen]
+pub fn vectorize(png_data: &[u8], config: JsValue) -> Result<String, JsError> {
+    let config: converter::VtracerConfig = parse_config(config)?;
+    converter::vectorize(png_data, &config).map_err(|e| JsError::new(&e.to_string()))
+}
+
+#[wasm_bindgen]
 pub fn normalize(svg_input: &str, config: JsValue) -> Result<String, JsError> {
     let config: normalizer::NormalizerConfig = parse_config(config)?;
     normalizer::normalize(svg_input, &config).map_err(|e| JsError::new(&e.to_string()))
