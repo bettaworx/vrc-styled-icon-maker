@@ -9,10 +9,18 @@ fn deserialize_f32<'de, D: de::Deserializer<'de>>(deserializer: D) -> Result<f32
         fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
             f.write_str("a float or a string containing a float")
         }
-        fn visit_f32<E: de::Error>(self, v: f32) -> Result<f32, E> { Ok(v) }
-        fn visit_f64<E: de::Error>(self, v: f64) -> Result<f32, E> { Ok(v as f32) }
-        fn visit_i64<E: de::Error>(self, v: i64) -> Result<f32, E> { Ok(v as f32) }
-        fn visit_u64<E: de::Error>(self, v: u64) -> Result<f32, E> { Ok(v as f32) }
+        fn visit_f32<E: de::Error>(self, v: f32) -> Result<f32, E> {
+            Ok(v)
+        }
+        fn visit_f64<E: de::Error>(self, v: f64) -> Result<f32, E> {
+            Ok(v as f32)
+        }
+        fn visit_i64<E: de::Error>(self, v: i64) -> Result<f32, E> {
+            Ok(v as f32)
+        }
+        fn visit_u64<E: de::Error>(self, v: u64) -> Result<f32, E> {
+            Ok(v as f32)
+        }
         fn visit_str<E: de::Error>(self, s: &str) -> Result<f32, E> {
             s.parse::<f32>().map_err(de::Error::custom)
         }
@@ -31,6 +39,10 @@ pub struct CompositorConfig {
     pub shadow_color: String,
     #[serde(deserialize_with = "deserialize_f32")]
     pub shadow_opacity: f32,
+    #[serde(deserialize_with = "deserialize_f32")]
+    pub shadow_offset_x: f32,
+    #[serde(deserialize_with = "deserialize_f32")]
+    pub shadow_offset_y: f32,
     pub padding: u32,
 }
 
@@ -39,11 +51,13 @@ impl Default for CompositorConfig {
         Self {
             canvas_size: 1024,
             gradient_start_color: "#ffffff".into(),
-            gradient_end_color: "#c0c0c0".into(),
-            shadow_blur: 12.0,
+            gradient_end_color: "#CCCCCC".into(),
+            shadow_blur: 10.0,
             shadow_color: "#000000".into(),
-            shadow_opacity: 1.0,
-            padding: 96,
+            shadow_opacity: 0.5,
+            shadow_offset_x: -4.0,
+            shadow_offset_y: 4.0,
+            padding: 108,
         }
     }
 }
@@ -142,7 +156,12 @@ fn compute_shape_bounds(svg_input: &str, info: &SvgInfo) -> (f64, f64, f64, f64)
             return (l, t, r, b);
         }
     }
-    (info.min_x, info.min_y, info.min_x + info.width, info.min_y + info.height)
+    (
+        info.min_x,
+        info.min_y,
+        info.min_x + info.width,
+        info.min_y + info.height,
+    )
 }
 
 pub fn compose(svg_input: &str, config: &CompositorConfig) -> Result<String, CompositorError> {
@@ -157,7 +176,13 @@ pub fn compose(svg_input: &str, config: &CompositorConfig) -> Result<String, Com
     let tx = (cs - scaled_w) / 2.0 - info.min_x * scale;
     let ty = (cs - scaled_h) / 2.0 - info.min_y * scale;
 
-    let margin = (config.shadow_blur * 3.0).ceil() as u32;
+    let blur_margin = (config.shadow_blur * 3.0).ceil() as u32;
+    let offset_extra = config
+        .shadow_offset_x
+        .abs()
+        .max(config.shadow_offset_y.abs())
+        .ceil() as u32;
+    let margin = blur_margin + offset_extra;
     let fx = -(margin as i32);
     let fy = -(margin as i32);
     let fw = config.canvas_size + margin * 2;
@@ -176,13 +201,13 @@ pub fn compose(svg_input: &str, config: &CompositorConfig) -> Result<String, Com
       <stop offset="1" stop-color="{ge}"/>
     </linearGradient>
     <filter id="vrc-shadow-filter" x="{fx}" y="{fy}" width="{fw}" height="{fh}" filterUnits="userSpaceOnUse">
-      <feOffset dx="0" dy="0"/>
+      <feOffset dx="{sdx}" dy="{sdy}"/>
       <feGaussianBlur result="blur" stdDeviation="{sb}"/>
       <feFlood flood-color="{sc}" flood-opacity="{so}"/>
       <feComposite in2="blur" operator="in"/>
       <feComposite in="SourceGraphic"/>
     </filter>
-    <mask id="vrc-icon-mask">
+    <mask id="vrc-icon-mask" style="mask-type:alpha">
       <g transform="translate({tx},{ty}) scale({scale})">
         {inner}
       </g>
@@ -205,6 +230,8 @@ pub fn compose(svg_input: &str, config: &CompositorConfig) -> Result<String, Com
         sb = config.shadow_blur,
         sc = config.shadow_color,
         so = config.shadow_opacity,
+        sdx = config.shadow_offset_x,
+        sdy = config.shadow_offset_y,
         tx = tx,
         ty = ty,
         scale = scale,
@@ -315,7 +342,7 @@ mod tests {
     fn config_parse_empty() {
         let config = CompositorConfig::from_params_str("").unwrap();
         assert_eq!(config.canvas_size, 1024);
-        assert_eq!(config.padding, 96);
+        assert_eq!(config.padding, 108);
     }
 
     #[test]
@@ -339,6 +366,25 @@ mod tests {
 </svg>"#;
         let result = compose(svg, &CompositorConfig::default()).unwrap();
         assert!(result.contains("vrc-icon-grad"));
+    }
+
+    #[test]
+    fn shadow_offset_in_output() {
+        let result = compose(SIMPLE_SVG, &CompositorConfig::default()).unwrap();
+        assert!(result.contains(r#"dx="-4""#));
+        assert!(result.contains(r#"dy="4""#));
+    }
+
+    #[test]
+    fn custom_shadow_offset() {
+        let config = CompositorConfig {
+            shadow_offset_x: -12.0,
+            shadow_offset_y: 6.0,
+            ..Default::default()
+        };
+        let result = compose(SIMPLE_SVG, &config).unwrap();
+        assert!(result.contains(r#"dx="-12""#));
+        assert!(result.contains(r#"dy="6""#));
     }
 
     #[test]
