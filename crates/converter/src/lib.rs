@@ -88,15 +88,72 @@ pub enum ConvertError {
     Vectorize(String),
 }
 
+fn luminance(r: u8, g: u8, b: u8) -> f32 {
+    0.299 * r as f32 + 0.587 * g as f32 + 0.114 * b as f32
+}
+
+fn edge_mean_luminance(pixels: &[u8], width: usize, height: usize) -> f32 {
+    let mut sum = 0.0f64;
+    let mut count = 0usize;
+    for y in 0..height {
+        for x in 0..width {
+            if y == 0 || y == height - 1 || x == 0 || x == width - 1 {
+                let i = (y * width + x) * 4;
+                sum += luminance(pixels[i], pixels[i + 1], pixels[i + 2]) as f64;
+                count += 1;
+            }
+        }
+    }
+    if count == 0 { 128.0 } else { (sum / count as f64) as f32 }
+}
+
+fn preprocess_for_tracing(pixels: &mut [u8], width: usize, height: usize) {
+    const ALPHA_THRESHOLD: u8 = 10;
+
+    let total = pixels.len() / 4;
+    let transparent_count = pixels
+        .chunks_exact(4)
+        .filter(|c| c[3] < ALPHA_THRESHOLD)
+        .count();
+
+    let has_transparency = transparent_count > total / 20;
+
+    if has_transparency {
+        for chunk in pixels.chunks_exact_mut(4) {
+            if chunk[3] < ALPHA_THRESHOLD {
+                chunk.copy_from_slice(&[255, 255, 255, 255]);
+            } else {
+                chunk.copy_from_slice(&[0, 0, 0, 255]);
+            }
+        }
+        return;
+    }
+
+    let edge_lum = edge_mean_luminance(pixels, width, height);
+    if edge_lum >= 128.0 {
+        return;
+    }
+
+    for chunk in pixels.chunks_exact_mut(4) {
+        let lum = luminance(chunk[0], chunk[1], chunk[2]);
+        if lum >= 128.0 {
+            chunk.copy_from_slice(&[0, 0, 0, 255]);
+        } else {
+            chunk.copy_from_slice(&[255, 255, 255, 255]);
+        }
+    }
+}
+
 pub fn vectorize(png_data: &[u8], config: &VtracerConfig) -> Result<String, ConvertError> {
     let img = image::load_from_memory(png_data)
         .map_err(|e| ConvertError::ImageDecode(e.to_string()))?;
 
     let (img_width, img_height) = img.dimensions();
-    let rgba = img.to_rgba8();
+    let mut pixels = img.to_rgba8().into_raw();
+    preprocess_for_tracing(&mut pixels, img_width as usize, img_height as usize);
 
     let color_image = ColorImage {
-        pixels: rgba.into_raw(),
+        pixels,
         width: img_width as usize,
         height: img_height as usize,
     };
@@ -168,5 +225,86 @@ mod tests {
     fn invalid_image_data_returns_error() {
         let result = vectorize(&[0, 1, 2, 3], &VtracerConfig::default());
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn preprocess_converts_transparent_to_white() {
+        // 2x2 image: 2 of 4 pixels transparent (>5%)
+        let mut pixels = vec![
+            255, 255, 255, 255, // white opaque (visible)
+            0, 0, 0, 0,         // transparent
+            128, 128, 128, 200, // gray visible
+            0, 0, 0, 5,         // nearly transparent
+        ];
+        preprocess_for_tracing(&mut pixels, 2, 2);
+        assert_eq!(&pixels[0..4], &[0, 0, 0, 255]);     // visible → black shape
+        assert_eq!(&pixels[4..8], &[255, 255, 255, 255]); // transparent → white bg
+        assert_eq!(&pixels[8..12], &[0, 0, 0, 255]);    // visible → black shape
+        assert_eq!(&pixels[12..16], &[255, 255, 255, 255]); // nearly transparent → white bg
+    }
+
+    #[test]
+    fn preprocess_skips_light_background_opaque() {
+        // 2x2 all-white opaque: edge luminance high → no change
+        let mut pixels = vec![
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+            255, 255, 255, 255,
+        ];
+        let original = pixels.clone();
+        preprocess_for_tracing(&mut pixels, 2, 2);
+        assert_eq!(pixels, original);
+    }
+
+    #[test]
+    fn preprocess_inverts_dark_background_opaque() {
+        // 4x4: black border, white center → dark background detected, invert
+        let mut pixels = Vec::new();
+        for y in 0..4u32 {
+            for x in 0..4u32 {
+                if x >= 1 && x <= 2 && y >= 1 && y <= 2 {
+                    pixels.extend_from_slice(&[255, 255, 255, 255]); // white icon
+                } else {
+                    pixels.extend_from_slice(&[0, 0, 0, 255]); // black background
+                }
+            }
+        }
+        preprocess_for_tracing(&mut pixels, 4, 4);
+        // edge pixels (black bg) → white, center pixels (white icon) → black
+        let edge_idx = 0; // (0,0) is an edge pixel
+        assert_eq!(&pixels[edge_idx..edge_idx + 4], &[255, 255, 255, 255]);
+        let center_idx = (1 * 4 + 1) * 4; // (1,1) is center
+        assert_eq!(&pixels[center_idx..center_idx + 4], &[0, 0, 0, 255]);
+    }
+
+    #[test]
+    fn vectorize_white_on_transparent() {
+        let mut img = image::RgbaImage::new(4, 4);
+        for (x, y, pixel) in img.enumerate_pixels_mut() {
+            if x >= 1 && x <= 2 && y >= 1 && y <= 2 {
+                *pixel = image::Rgba([255, 255, 255, 255]);
+            } else {
+                *pixel = image::Rgba([0, 0, 0, 0]);
+            }
+        }
+        let png = encode_png(&img);
+        let result = vectorize(&png, &VtracerConfig::default()).unwrap();
+        assert!(result.contains("<svg"));
+    }
+
+    #[test]
+    fn vectorize_white_on_black_opaque() {
+        let mut img = image::RgbaImage::new(8, 8);
+        for (x, y, pixel) in img.enumerate_pixels_mut() {
+            if x >= 2 && x <= 5 && y >= 2 && y <= 5 {
+                *pixel = image::Rgba([255, 255, 255, 255]);
+            } else {
+                *pixel = image::Rgba([0, 0, 0, 255]);
+            }
+        }
+        let png = encode_png(&img);
+        let result = vectorize(&png, &VtracerConfig::default()).unwrap();
+        assert!(result.contains("<svg"));
     }
 }
