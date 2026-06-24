@@ -1,0 +1,11 @@
+[package]
+name = "renderer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+resvg = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde-keyvalue = { workspace = true }
+png = "0.18"

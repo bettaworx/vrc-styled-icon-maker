@@ -1,0 +1,19 @@
+[package]
+name = "vrc-styled-icon-maker-wasm"
+version = "0.1.0"
+edition = "2024"
+description = "WASM bindings for VRC Styled Icon Maker"
+license = "MIT"
+repository = "https://github.com/bettaworx/vrc-styled-icon-maker"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+normalizer = { path = "../normalizer" }
+compositor = { path = "../compositor" }
+renderer = { path = "../renderer" }
+converter = { path = "../converter" }
+wasm-bindgen = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
+serde = { workspace = true }

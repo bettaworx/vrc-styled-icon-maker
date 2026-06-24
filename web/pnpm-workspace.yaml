@@ -1,0 +1,5 @@
+allowBuilds:
+  '@swc/core': true
+  esbuild: true
+minimumReleaseAgeExclude:
+  - '@bettaworx/vrc-styled-icon-maker-wasm@0.1.0'

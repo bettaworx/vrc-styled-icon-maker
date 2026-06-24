@@ -1,10 +1,30 @@
-# VRCStyledIconMaker
+# vrc-styled-icon-maker
 Create an icon to be used in the VRChat Expression Menu
 
-![alt text](https://raw.githubusercontent.com/nekochanfood/VRCStyledIconMaker/refs/heads/main/assets/Thumbnail.png "Preview")
+![alt text](https://raw.githubusercontent.com/bettaworx/vrc-styled-icon-maker/refs/heads/main/assets/Thumbnail.png "Preview")
 
-### Acknowledgment
-This repository includes an icon based on Phosphor Icons (Copyright (c) 2020 Phosphor Icons), distributed under the MIT License.
+## How To Use
+You can use the tool by accessing the [web app](https://vsim.bettaworx.net) or using the [CLI app](https://github.com/bettaworx/vrc-styled-icon-maker/releases/latest).
+
+### Web App
+TBD
+
+### CLI App
+TBD
+
+## Q&A
+
+#### Q. How does the web app work?
+A. It runs on the your web browser (WASM), which means your data is processed locally in your browser and not sent to any server.
+
+#### Q. Can I use png icon?
+A. Yes, but it will be converted to a vector image internally for processing and the result may not be as good. So I'd say SVG is better, which gives you better results.
+
+## License
+This project is licensed under the [MIT License](https://github.com/bettaworx/vrc-styled-icon-maker/blob/main/LICENSE).
+
+## Acknowledgment
+This repository includes a material based on Phosphor Icons (Copyright (c) 2020 Phosphor Icons), distributed under the MIT License.
 
 ```md
 MIT License
