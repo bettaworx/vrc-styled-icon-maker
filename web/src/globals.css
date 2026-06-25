@@ -89,3 +89,22 @@
     font-weight: 600;
   }
 }
+
+/* ponytail: override github-markdown-dark hardcoded backgrounds to blend with app theme */
+.dark .markdown-body {
+  color-scheme: dark;
+  background-color: transparent;
+}
+
+.dark .markdown-body table tr {
+  background-color: transparent;
+}
+
+.dark .markdown-body table tr:nth-child(2n) {
+  background-color: oklch(1 0 0 / 3%);
+}
+
+.dark .markdown-body pre,
+.dark .markdown-body code {
+  background-color: oklch(1 0 0 / 5%);
+}

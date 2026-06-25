@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { CircleNotch } from "@phosphor-icons/react";
-import "github-markdown-css/github-markdown-light.css";
+import { useTheme } from "../hooks/use-theme";
+import lightCss from "github-markdown-css/github-markdown-light.css?url";
+import darkCss from "github-markdown-css/github-markdown-dark.css?url";
 
 export const Route = createFileRoute("/about")({
   component: AboutPage,
@@ -30,7 +32,33 @@ function setCache(html: string) {
   } catch {}
 }
 
+function useIsDark() {
+  const { theme } = useTheme();
+  const [osPrefersDark, setOsPrefersDark] = useState(
+    () => window.matchMedia("(prefers-color-scheme: dark)").matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => setOsPrefersDark(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return theme === "dark" || (theme === "auto" && osPrefersDark);
+}
+
 function AboutPage() {
+  const isDark = useIsDark();
+
+  useEffect(() => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = isDark ? darkCss : lightCss;
+    document.head.appendChild(link);
+    return () => {
+      document.head.removeChild(link);
+    };
+  }, [isDark]);
+
   const [html, setHtml] = useState<string | null>(getCached);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(!html);
