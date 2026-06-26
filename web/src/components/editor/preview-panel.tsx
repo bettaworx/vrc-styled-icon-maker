@@ -30,7 +30,7 @@ export function PreviewPanel({ entries, onRemove, onDownload, loading, error }: 
   if (entries.length === 0) {
     return (
       <div className="flex aspect-video items-center justify-center bg-secondary text-muted-foreground md:aspect-auto md:h-full">
-        <p className="text-sm">Upload files to preview</p>
+        <p className="text-sm">Import files to preview</p>
       </div>
     );
   }

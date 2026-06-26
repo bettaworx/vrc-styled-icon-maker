@@ -9,7 +9,7 @@ import {
   DEFAULT_COMPOSITOR_CONFIG,
   DEFAULT_RENDER_OPTIONS,
 } from "@/wasm/types";
-import { downloadPng } from "@/lib/download";
+import { downloadPng, downloadSvg } from "@/lib/download";
 import { EditorLayout } from "@/components/editor/editor-layout";
 import { FileUpload } from "@/components/editor/file-upload";
 import { FileList, type ImageEntry } from "@/components/editor/file-list";
@@ -135,6 +135,16 @@ function EditorPage() {
     [ready, entries, normConfig, compConfig, renderOpts],
   );
 
+  const handleDownloadSvg = useCallback(() => {
+    if (!ready || entries.length === 0) return;
+    for (const entry of entries) {
+      const normalized = normalize(entry.svgInput, normConfig);
+      const composed = compose(normalized, compConfig);
+      const outName = entry.fileName.replace(/\.(svg|png)$/i, ".svg");
+      downloadSvg(composed, outName);
+    }
+  }, [ready, entries, normConfig, compConfig]);
+
   const handleDownload = useCallback(() => {
     if (!ready || entries.length === 0) return;
     setProcessing(true);
@@ -177,6 +187,7 @@ function EditorPage() {
           <RenderControls options={renderOpts} onChange={setRenderOpts} disabled={disabled} />
           <DownloadButton
             onClick={handleDownload}
+            onDownloadSvg={handleDownloadSvg}
             disabled={disabled || entries.length === 0 || processing}
             processing={processing}
             count={entries.length}
